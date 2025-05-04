@@ -1,28 +1,45 @@
 <?php
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get form fields and sanitize input
-    $name = htmlspecialchars(trim($_POST['name']));
-    $email = htmlspecialchars(trim($_POST['email']));
-    $message = htmlspecialchars(trim($_POST['message']));
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-    // Validate email
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        die("Invalid email format");
-    }
+require 'PHPMailer/src/Exception.php';
+require 'PHPMailer/src/PHPMailer.php';
+require 'PHPMailer/src/SMTP.php';
 
-    // Set recipient email address
-    $to = "isaacprnz@gmail.com"; 
-    $subject = "New Contact Form Message";
-    $body = "Name: $name\nEmail: $email\n\nMessage:\n$message";
-    $headers = "From: $email";
+$name = htmlspecialchars(trim($_POST['name']));
+$email = htmlspecialchars(trim($_POST['email']));
+$message = htmlspecialchars(trim($_POST['message']));
 
-    // Send the email
-    if (mail($to, $subject, $body, $headers)) {
-        echo "Thank you for contacting us!";
-    } else {
-        echo "Sorry, your message could not be sent.";
-    }
-} else {
-    echo "Invalid request.";
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    die("Invalid email format");
+}
+
+$mail = new PHPMailer(true);
+
+try {
+    $mail->isSMTP();
+    $mail->Host = 'smtp.gmail.com';
+    $mail->SMTPAuth = true;
+    $mail->Username = 'yourgmail@gmail.com';
+    $mail->Password = 'your-app-password';
+    $mail->SMTPSecure = 'tls';
+    $mail->Port = 587;
+
+    $mail->setFrom('yourgmail@gmail.com', 'Contact Form');
+    $mail->addAddress('yourgmail@gmail.com');
+    $mail->addReplyTo($email, $name);
+
+    $mail->isHTML(true);
+    $mail->Subject = 'New Contact Form Submission';
+    $mail->Body    = "
+        <strong>Name:</strong> {$name}<br>
+        <strong>Email:</strong> {$email}<br><br>
+        <strong>Message:</strong><br>{$message}
+    ";
+
+    $mail->send();
+    echo 'Message sent successfully!';
+} catch (Exception $e) {
+    echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
 }
 ?>
